@@ -4,6 +4,6 @@ description: |
   behind a Traefik proxy.
 version: v0.1.0
 category: Project Management
-maintainer: LasLabs Inc.
+maintainer: LasLabs Inc. <support@laslabs.com>
 license: Apache 2.0
 projectURL: https://github.com/LasLabs/rancher-catalog

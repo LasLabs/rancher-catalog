@@ -1,9 +1,9 @@
-name: Sentry
+name: Odoo Runbot
 description: |
-  Sentry error tracking system.
+  Runbot is a Continuous Integration server for Odoo.
   This build is meant to be behind a Traefik proxy.
-version: v0.1.0
-category: CMS
+version: v9.0.0.1.0
+category: Continuous Integration
 maintainer: LasLabs Inc. <support@laslabs.com>
 license: Apache 2.0
 projectURL: https://github.com/LasLabs/rancher-catalog
