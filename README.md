@@ -3,7 +3,18 @@
 LasLabs Rancher
 ===============
 
-This is a Rancher catalog providing services used by LasLabs.
+This is a Rancher catalog providing services used by LasLabs:
+
+* [Atlassian Confluence](/templates/confluence)
+* [Atlassian JIRA](/templates/jira)
+* [Sentry Error Tracking](/templates/sentry)
+
+Installation
+============
+
+Installation is as simple as adding this repo as a catalog in your Rancher
+using the [instructions they have provided](
+http://rancher.com/docs/rancher/latest/en/catalog/#adding-catalogs).
 
 Bug Tracker
 ===========
