@@ -1,0 +1,6 @@
+name: Confluence
+description: |
+  Confluence based on Alpine with a PostgreSQL database. This build is meant to be
+  behind a Traefik proxy.
+version: v0.1.0
+category: CMS
