@@ -1,0 +1,6 @@
+name: JIRA
+description: |
+  JIRA based on Alpine with a PostgreSQL database. This build is meant to be
+  behind a Traefik proxy.
+version: v0.1.0
+category: Project Management
