@@ -28,7 +28,6 @@ services:
       traefik.port: '8090'
       io.rancher.container.pull_image: always
       traefik.frontend.passHostHeader: 'true'
-      io.rancher.sidekicks: postgresql
   postgresql:
     image: postgres:9.6-alpine
     environment:
