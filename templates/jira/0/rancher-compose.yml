@@ -4,7 +4,7 @@ catalog:
   name: JIRA
   version: "v0.1.0"
   description: "JIRA with a PostgreSQL backend. Meant to be proxied by Traefik."
-  uuid: vertical-medical-dev-0
+  uuid: laslabs-jira-0
   minimum_rancher_version: v1.0.0
   questions:
 
