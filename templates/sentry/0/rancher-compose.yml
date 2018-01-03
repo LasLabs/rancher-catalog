@@ -1,0 +1,126 @@
+version: "2"
+
+catalog:
+  name: Sentry
+  version: "v0.1.0"
+  description: "Sentry with a PostgreSQL backend. Meant to be proxied by Traefik."
+  uuid: laslabs-sentry-0
+  minimum_rancher_version: v1.0.0
+  questions:
+
+    - variable: "VOLUME_DRIVER"
+      description: "The volume driver to use for persistent storage."
+      label: "Volume Driver"
+      required: true
+      type: "enum"
+      default: "local"
+      options:
+        - local
+        - rancher-ebs
+        - rancher-efs
+        - rancher-nfs
+
+    - variable: "PSQL_DB"
+      description: "Name of the database on the PostgreSQL server."
+      label: "PostgreSQL Database"
+      default: "sentry"
+      type: "string"
+      required: true
+
+    - variable: "PSQL_USER"
+      description: "Username to use for the PostgreSQL server."
+      label: "PostgreSQL User"
+      default: "sentry"
+      type: "string"
+      required: true
+
+    - variable: "PSQL_PASSWORD"
+      description: "Password to use for the PostgreSQL server."
+      label: "PostgreSQL Password"
+      type: "password"
+      required: true
+
+    - variable: "SMTP_HOST"
+      description: "Hostname to use for outbound emails."
+      label: "SMTP Host"
+      type: "string"
+
+    - variable: "SMTP_PORT"
+      description: "Port number to use when connecting to SMTP server."
+      label: "SMTP Port"
+      type: "int"
+      default: "587"
+
+    - variable: "SMTP_USER"
+      description: "Username to use when logging in to SMTP server."
+      label: "SMTP User"
+      type: "string"
+
+    - variable: "SMTP_PASSWORD"
+      description: "Password to use when logging in to the SMTP server."
+      label: "SMTP Password"
+      type: "password"
+
+    - variable: "SENTRY_EMAIL"
+      description: "Email address that Sentry sends from."
+      label: "Sentry Email"
+      type: "string"
+
+    - variable: "SENTRY_SECRET"
+      description: "A secret key used for cryptographic functions within Sentry."
+      label: "Sentry Secret"
+      type: "password"
+
+    - variable: "TRAEFIK_DOMAIN"
+      description: "Override for the base domain that is defined in Traefik."
+      label: "Traefik Domain"
+      type: "string"
+
+    - variable: "TRAEFIK_HOST"
+      description: "Additional domain name that should be advertised through Traefik."
+      label: "Traefik Host"
+      type: "string"
+
+services:
+  sentry-cron:
+    scale: 1
+    start_on_create: true
+  sentry-worker:
+    start_on_create: true
+  redis:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 6379
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  postgresql:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 5432
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  sentry-server:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 9000
+      unhealthy_threshold: 3
+      initializing_timeout: 600000
+      interval: 2000
+      strategy: recreate
+      request_line: GET "/auth/login/sentry" "HTTP/1.0"
+      reinitializing_timeout: 60000
