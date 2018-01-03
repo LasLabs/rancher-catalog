@@ -50,7 +50,7 @@ services:
     health_check:
       healthy_threshold: 2
       response_timeout: 2000
-      port: 8080
+      port: 8090
       unhealthy_threshold: 60
       initializing_timeout: 200000
       interval: 2000
