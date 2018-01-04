@@ -7,6 +7,7 @@ This is a Rancher catalog providing services used by LasLabs:
 
 * [Atlassian Confluence](/templates/confluence)
 * [Atlassian JIRA](/templates/jira)
+* [Mattermost Messaging](/templates/mattermost)
 * [Sentry Error Tracking](/templates/sentry)
 
 Installation

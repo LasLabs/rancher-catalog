@@ -1,0 +1,49 @@
+version: "2"
+
+volumes:
+  mattermost-db-data:
+    driver: ${VOLUME_DRIVER}
+  mattermost-app-config:
+    driver: ${VOLUME_DRIVER}
+  mattermost-app-data:
+    driver: ${VOLUME_DRIVER}
+  mattermost-app-logs:
+    driver: ${VOLUME_DRIVER}
+
+services:
+
+  mattermost-server:
+    image: mattermost/mattermost-prod-app:4.5.0
+    restart: unless-stopped
+    volumes:
+      - mattermost-app-config:/mattermost/config:rw
+      - mattermost-app-data:/mattermost/data:rw
+      - mattermost-app-logs:/mattermost/logs:rw
+    environment:
+      MM_USERNAME: "${PSQL_USER}"
+      MM_PASSWORD: "${PSQL_PASSWORD}"
+      MM_DBNAME: "${PSQL_DB}"
+    links:
+      - "postgresql:db"
+    labels:
+      {{- if ne .Values.TRAEFIK_DOMAIN "" }}
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      {{- end }}
+      {{- if ne .Values.TRAEFIK_HOST "" }}
+      traefik.frontend.rule: "Host: ${TRAEFIK_HOST}"
+      {{- end }}
+      traefik.port: "80"
+      traefik.enable: "true"
+      traefik.frontend.passHostHeader: "true"
+      io.rancher.container.pull_image: "always"
+
+  postgresql:
+    image: postgres:9.6-alpine
+    restart: unless-stopped
+    environment:
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+      POSTGRES_PASSWORD: "${PSQL_PASSWORD}"
+      POSTGRES_USER: "${PSQL_USER}"
+      POSTGRES_DB: "${PSQL_DB}"
+    volumes:
+      - mattermost-db-data:/var/lib/postgresql/data/
