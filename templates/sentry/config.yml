@@ -2,7 +2,7 @@ name: Sentry
 description: |
   Sentry error tracking system.
   This build is meant to be behind a Traefik proxy.
-version: v0.1.0
+version: v0.1.1
 category: CMS
 maintainer: LasLabs Inc. <support@laslabs.com>
 license: Apache 2.0
