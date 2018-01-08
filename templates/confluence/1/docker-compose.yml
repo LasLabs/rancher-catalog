@@ -1,0 +1,77 @@
+---
+version: '2'
+
+volumes:
+  confluence-jre-security-data:
+    driver: ${VOLUME_DRIVER}
+  confluence-home-data:
+    driver: ${VOLUME_DRIVER}
+  confluence-install-data:
+    driver: ${VOLUME_DRIVER}
+  {{- if eq .Values.PSQL_SERVICE "" }}
+  confluence-db-data:
+    driver: ${VOLUME_DRIVER}
+  {{- end }}
+
+services:
+
+  confluence-server:
+    image: laslabs/alpine-confluence:6.6.0
+    volumes:
+    - confluence-home-data:/var/atlassian/confluence
+    - confluence-log-data:/opt/atlassian/confluence/logs
+    - confluence-jre-security-data:/usr/lib/jvm/java-1.8-openjdk/jre/lib/security
+    - confluence-install-conf-data:/opt/atlassian/confluence/conf
+    labels:
+      {{- if ne .Values.TRAEFIK_DOMAIN "" }}
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      {{- end }}
+      {{- if ne .Values.TRAEFIK_HOST "" }}
+      traefik.frontend.rule: 'Host: ${TRAEFIK_HOST}'
+      {{- end }}
+      traefik.enable: 'true'
+      traefik.port: '8090'
+      io.rancher.container.pull_image: always
+      traefik.frontend.passHostHeader: 'true'
+    {{- if ne .Values.PSQL_SERVICE "" }}
+    external_links:
+    - "${PSQL_SERVICE}:${PSQL_LINK}"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE "" }}
+    links:
+    - "postgresql:${PSQL_LINK}"
+    {{- end }}
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8090
+      unhealthy_threshold: 60
+      initializing_timeout: 200000
+      interval: 2000
+      strategy: recreate
+      request_line: GET "/" "HTTP/1.0"
+      reinitializing_timeout: 200000
+
+  {{- if eq .Values.PSQL_SERVICE "" }}
+  postgresql:
+    image: postgres:9.6-alpine
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: ${PSQL_PASSWORD}
+      POSTGRES_USER: ${PSQL_USER}
+    volumes:
+    - confluence-db-data:/var/lib/postgresql/data
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 5432
+      unhealthy_threshold: 20
+      initializing_timeout: 60000
+      interval: 5000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  {{- end }}
