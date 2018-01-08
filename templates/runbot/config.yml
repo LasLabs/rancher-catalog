@@ -2,7 +2,7 @@ name: Odoo Runbot
 description: |
   Runbot is a Continuous Integration server for Odoo.
   This build is meant to be behind a Traefik proxy.
-version: v9.0.0.1.0
+version: v9.0.0.1.1
 category: Continuous Integration
 maintainer: LasLabs Inc. <support@laslabs.com>
 license: Apache 2.0
