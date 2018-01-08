@@ -3,7 +3,9 @@ version: "2"
 catalog:
   name: Sentry
   version: "v0.1.1"
-  description: "Sentry with a PostgreSQL backend. Meant to be proxied by Traefik."
+  description: |
+    Sentry with a PostgreSQL backend.
+    Meant to be proxied by Traefik.
   uuid: laslabs-sentry-1
   minimum_rancher_version: v1.0.0
   questions:
@@ -21,14 +23,14 @@ catalog:
         - rancher-nfs
 
     - variable: "REDIS_SERVICE"
-      description: \
+      description: |
         Existing Redis service to use.
         Leaving this empty will create a Redis service in the stack.
       label: "Redis Service"
       type: "service"
 
     - variable: "PSQL_SERVICE"
-      description: \
+      description: |
         Existing PostgreSQL database service to use.
         Leaving this empty will create a Postgres service in the stack.
       label: "PostgreSQL Service"
@@ -53,7 +55,6 @@ catalog:
       label: "PostgreSQL Password"
       type: "password"
       required: true
-      default: password
 
     - variable: "SMTP_HOST"
       description: "Hostname to use for outbound emails."
@@ -86,7 +87,6 @@ catalog:
       label: "Sentry Secret"
       type: "password"
       required: true
-      default: password
 
     - variable: "TRAEFIK_DOMAIN"
       description: "Override for the base domain that is defined in Traefik."
