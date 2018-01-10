@@ -1,0 +1,9 @@
+name: Odoo Upgrader
+description: |
+  Upgrade Odoo major versions using OpenUpgrade.
+  This build is meant to be behind a Traefik proxy.
+version: v0.1.0
+category: Continuous Integration
+maintainer: LasLabs Inc. <support@laslabs.com>
+license: Apache 2.0
+projectURL: https://github.com/LasLabs/rancher-catalog
