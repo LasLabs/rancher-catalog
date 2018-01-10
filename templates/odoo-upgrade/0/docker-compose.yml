@@ -21,6 +21,8 @@ services:
       - PGDATABASE: "${PSQL_DATABASE_NEW}"
       - PGUSER: "${PSQL_USER}"
       - PGPASSWORD: "${PSQL_PASSWORD}"
+      - ODOO_FILESTORE_NEW: "/var/lib/odoo_upgrader_files"
+      - ODOO_FILESTORE_OLD: "${ODOO_SERVICE_FILES}"
     external_links:
     - "${PSQL_SERVICE_OLD}:db_old"
     {{- if ne .Values.PSQL_SERVICE_NEW "" }}
@@ -31,9 +33,10 @@ services:
     - postgresql:db
     {{- end }}
     volumes:
-    - odoo-web-data:/var/lib/odoo
+    - odoo-web-data:/var/lib/odoo_upgrader_files
     - odoo-private-addons:/opt/odoo/custom/src/private
-    tty: true
+    volumes_from:
+    - "${ODOO_SERVICE_OLD}"
     labels:
       io.rancher.container.pull_image: 'always'
       io.rancher.container.start_once: 'true'
@@ -42,13 +45,19 @@ services:
 
   odoo-upgrader-custom:
     image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
+    command: |
+      odoo --workers 0 \
+           --limit-time-cpu 0 \
+           --limit-time-real 0 \
+           --stop-after-init \
+           --update all
     environment:
       - PGDATABASE: "${PSQL_DATABASE_NEW}"
       - PGUSER: "${PSQL_USER}"
       - PGPASSWORD: "${PSQL_PASSWORD}"
-    external_links:
-    - "${PSQL_SERVICE_OLD}:db_old"
+      - WAIT_NOHOST: odoo-upgrader-core
     {{- if ne .Values.PSQL_SERVICE_NEW "" }}
+    external_links:
     - "${PSQL_SERVICE_NEW}:db"
     {{- end }}
     {{- if eq .Values.PSQL_SERVICE_NEW "" }}
@@ -58,12 +67,53 @@ services:
     volumes:
     - odoo-web-data:/var/lib/odoo
     - odoo-private-addons:/opt/odoo/custom/src/private
-    tty: true
     labels:
       io.rancher.container.pull_image: 'always'
       io.rancher.container.start_once: 'true'
     scale: 1
     start_on_create: true
+
+  odoo:
+    image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
+    environment:
+      - PGDATABASE: "${PSQL_DATABASE_NEW}"
+      - PGUSER: "${PSQL_USER}"
+      - PGPASSWORD: "${PSQL_PASSWORD}"
+      - ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
+      - WAIT_NOHOST: odoo-upgrader-custom
+    {{- if ne .Values.PSQL_SERVICE_NEW "" }}
+    external_links:
+    - "${PSQL_SERVICE_NEW}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    volumes:
+    - odoo-web-data:/var/lib/odoo
+    - odoo-private-addons:/opt/odoo/custom/src/private
+    labels:
+      {{- if ne .Values.TRAEFIK_DOMAIN "" }}
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      {{- end }}
+      {{- if ne .Values.TRAEFIK_HOST "" }}
+      traefik.frontend.rule: 'Host: ${TRAEFIK_HOST}'
+      {{- end }}
+      traefik.enable: 'true'
+      traefik.port: '8069'
+      traefik.frontend.passHostHeader: 'true'
+      io.rancher.container.pull_image: 'always'
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8069
+      unhealthy_threshold: 10
+      initializing_timeout: 99999999999999
+      interval: 5000
+      strategy: recreate
+      request_line: GET "/" "HTTP/1.0"
 
   {{- if eq .Values.PSQL_SERVICE_NEW "" }}
   postgresql:
