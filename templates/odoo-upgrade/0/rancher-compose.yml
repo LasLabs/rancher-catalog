@@ -1,12 +1,11 @@
 version: "2"
 
 catalog:
-  name: Odoo Runbot
-  version: "v9.0.0.1.1"
+  name: Odoo Upgrader
+  version: "v0.1.0"
   description: |
-    Runbot is a Continuous Integration server for Odoo.
-    Meant to be proxied by Traefik.
-  uuid: laslabs-runbot-1
+    Upgrade Odoo major versions.
+  uuid: laslabs-odoo-upgrade-0
   minimum_rancher_version: v1.0.0
   questions:
 
@@ -23,6 +22,7 @@ catalog:
         - rancher-nfs
 
     - variable: "ODOO_VERSION"
+      label: "Target Version"
       description: |
         Version of Odoo to upgrade to. This should be the major version
         immediately above the version installed in your database. For
@@ -30,9 +30,9 @@ catalog:
       type: "enum"
       required: true
       options:
-        - 9.0
-        - 10.0
-        - 11.0
+        - "9.0"
+        - "10.0"
+        - "11.0"
 
     - variable: "SCAFFOLD_IMAGE"
       description: "Your scaffold image location."
@@ -46,38 +46,18 @@ catalog:
       type: "string"
       required: true
 
-    - variable: "ODOO_SERVICE_OLD"
+    - variable: "ODOO_URI_OLD"
       description: |
-        Existing Odoo service to copy file store from.
-      label: "Odoo Service"
-      type: "service"
-      required: true
-
-    - variable: "ODOO_SERVICE_FILES"
-      description: |
-        Location of the Odoo files in the service container.
-      label: "Odoo Filesystem"
-      type: "string"
-      required: true
-      default: "/var/lib/odoo"
-
-    - variable: "PSQL_SERVICE_OLD"
-      description: |
-        Existing PostgreSQL database service to use that contains the old database.
-      label: "PostgreSQL Old"
-      type: "service"
-      required: true
-
-    - variable: "PSQL_USER_OLD"
-      description: "Username to use for the old PostgreSQL server."
-      label: "Old PostgreSQL User"
-      default: "odoo"
+        URI of an Odoo instance to obtain a backup from.
+        Note that this instance must be capable of providing a backup via the web UI.
+      label: "Old Odoo URI"
       type: "string"
       required: true
 
-    - variable: "PSQL_PASSWORD_OLD"
-      description: "Password to use for the old PostgreSQL server."
-      label: "Old PostgreSQL Password"
+    - variable: "ADMIN_PASSWORD_OLD"
+      description: |
+        Database administration password for the old Odoo system.
+      label: "Old Admin Password"
       type: "password"
       required: true
 
@@ -97,15 +77,13 @@ catalog:
     - variable: "PSQL_USER_NEW"
       description: |
         Username to use for the new PostgreSQL server.
-        Leave blank if the credentials match the old server.
-      label: "Old PostgreSQL User"
+      label: "New PostgreSQL User"
       type: "string"
 
     - variable: "PSQL_PASSWORD_NEW"
       description: |
-        Password to use for the old PostgreSQL server.
-        Leave blank if the credentials match the old server.
-      label: "Old PostgreSQL Password"
+        Password to use for the new PostgreSQL server.
+      label: "New PostgreSQL Password"
       type: "password"
 
     - variable: "PSQL_DATABASE_NEW"

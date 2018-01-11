@@ -13,49 +13,16 @@ volumes:
 
 services:
 
-  odoo-upgrader-core:
-    image: laslabs/odoo-upgrade:9.0
+  odoo-upgrader:
+    image: "laslabs/odoo-upgrade:${ODOO_VERSION}"
     environment:
-      - DB_SOURCE: "${PSQL_DATABASE_OLD}"
-      - DB_TARGET: "${PSQL_DATABASE_NEW}"
-      - PGDATABASE: "${PSQL_DATABASE_NEW}"
-      - PGUSER: "${PSQL_USER}"
-      - PGPASSWORD: "${PSQL_PASSWORD}"
-      - ODOO_FILESTORE_NEW: "/var/lib/odoo_upgrader_files"
-      - ODOO_FILESTORE_OLD: "${ODOO_SERVICE_FILES}"
-    external_links:
-    - "${PSQL_SERVICE_OLD}:db_old"
-    {{- if ne .Values.PSQL_SERVICE_NEW "" }}
-    - "${PSQL_SERVICE_NEW}:db"
-    {{- end }}
-    {{- if eq .Values.PSQL_SERVICE_NEW "" }}
-    links:
-    - postgresql:db
-    {{- end }}
-    volumes:
-    - odoo-web-data:/var/lib/odoo_upgrader_files
-    - odoo-private-addons:/opt/odoo/custom/src/private
-    volumes_from:
-    - "${ODOO_SERVICE_OLD}"
-    labels:
-      io.rancher.container.pull_image: 'always'
-      io.rancher.container.start_once: 'true'
-    scale: 1
-    start_on_create: true
-
-  odoo-upgrader-custom:
-    image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
-    command: |
-      odoo --workers 0 \
-           --limit-time-cpu 0 \
-           --limit-time-real 0 \
-           --stop-after-init \
-           --update all
-    environment:
-      - PGDATABASE: "${PSQL_DATABASE_NEW}"
-      - PGUSER: "${PSQL_USER}"
-      - PGPASSWORD: "${PSQL_PASSWORD}"
-      - WAIT_NOHOST: odoo-upgrader-core
+      DB_SOURCE: "${PSQL_DATABASE_OLD}"
+      DB_TARGET: "${PSQL_DATABASE_NEW}"
+      PGDATABASE: "${PSQL_DATABASE_NEW}"
+      PGUSER: "${PSQL_USER_NEW}"
+      PGPASSWORD: "${PSQL_PASSWORD_NEW}"
+      ODOO_URI_OLD: "${ODOO_URI_OLD}"
+      ADMIN_PASSWORD_OLD: "${ADMIN_PASSWORD_OLD}"
     {{- if ne .Values.PSQL_SERVICE_NEW "" }}
     external_links:
     - "${PSQL_SERVICE_NEW}:db"
@@ -73,14 +40,44 @@ services:
     scale: 1
     start_on_create: true
 
+#  odoo-upgrader-custom:
+#    image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
+#    command: |
+#      odoo --workers 0 \
+#           --limit-time-cpu 0 \
+#           --limit-time-real 0 \
+#           --stop-after-init \
+#           --update all
+#    environment:
+#      PGDATABASE: "${PSQL_DATABASE_NEW}"
+#      PGUSER: "${PSQL_USER_NEW}"
+#      PGPASSWORD: "${PSQL_PASSWORD_NEW}"
+#      WAIT_NOHOST: "odoo-upgrader-core"
+#    {{- if ne .Values.PSQL_SERVICE_NEW "" }}
+#    external_links:
+#    - "${PSQL_SERVICE_NEW}:db"
+#    {{- end }}
+#    {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+#    links:
+#    - postgresql:db
+#    {{- end }}
+#    volumes:
+#    - odoo-web-data:/var/lib/odoo
+#    - odoo-private-addons:/opt/odoo/custom/src/private
+#    labels:
+#      io.rancher.container.pull_image: 'always'
+#      io.rancher.container.start_once: 'true'
+#    scale: 1
+#    start_on_create: true
+
   odoo:
     image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
     environment:
-      - PGDATABASE: "${PSQL_DATABASE_NEW}"
-      - PGUSER: "${PSQL_USER}"
-      - PGPASSWORD: "${PSQL_PASSWORD}"
-      - ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
-      - WAIT_NOHOST: odoo-upgrader-custom
+      PGDATABASE: "${PSQL_DATABASE_NEW}"
+      PGUSER: "${PSQL_USER_NEW}"
+      PGPASSWORD: "${PSQL_PASSWORD_NEW}"
+      ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
+      WAIT_NOHOST: "odoo-upgrader"
     {{- if ne .Values.PSQL_SERVICE_NEW "" }}
     external_links:
     - "${PSQL_SERVICE_NEW}:db"
@@ -104,7 +101,7 @@ services:
       traefik.frontend.passHostHeader: 'true'
       io.rancher.container.pull_image: 'always'
     scale: 1
-    start_on_create: true
+    start_on_create: false
     health_check:
       healthy_threshold: 2
       response_timeout: 2000
@@ -118,13 +115,12 @@ services:
   {{- if eq .Values.PSQL_SERVICE_NEW "" }}
   postgresql:
     image: postgres:9.6-alpine
-    hostname: db
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
-      POSTGRES_PASSWORD: "${PSQL_PASSWORD}"
-      POSTGRES_USER: "${PSQL_USER}"
+      POSTGRES_PASSWORD: "${PSQL_PASSWORD_NEW}"
+      POSTGRES_USER: "${PSQL_USER_NEW}"
     volumes:
-    - odoo-db-data-new:/var/lib/postgresql/data/
+    - odoo-db-data:/var/lib/postgresql/data/
     scale: 1
     start_on_create: true
     health_check:
