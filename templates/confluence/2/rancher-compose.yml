@@ -1,0 +1,62 @@
+version: "2"
+
+catalog:
+  name: Confluence
+  version: "v0.1.2"
+  description: |
+    Confluence with a PostgreSQL backend.
+    Meant to be proxied by Traefik.
+  uuid: laslabs-confluence-2
+  minimum_rancher_version: v1.0.0
+  questions:
+
+    - variable: "VOLUME_DRIVER"
+      description: "The volume driver to use for persistent storage."
+      label: "Volume Driver"
+      required: true
+      type: "enum"
+      default: "local"
+      options:
+        - local
+        - rancher-ebs
+        - rancher-efs
+        - rancher-nfs
+
+    - variable: "PSQL_SERVICE"
+      description: |
+        Existing PostgreSQL database service to use.
+        Leaving this empty will create a Postgres service in the stack.
+      label: "PostgreSQL Service"
+      type: "service"
+
+    - variable: "PSQL_LINK"
+      description: "Name of PostgreSQL server, as Confluence will see it."
+      label: "PostgreSQL Name"
+      default: "db"
+      type: "string"
+      required: true
+
+    - variable: "PSQL_USER"
+      description: "Username to use for the PostgreSQL server."
+      label: "PostgreSQL User"
+      default: "jira"
+      type: "string"
+      required: true
+
+    - variable: "PSQL_PASSWORD"
+      description: "Password to use for the PostgreSQL server."
+      label: "PostgreSQL Password"
+      type: "password"
+      required: true
+
+    - variable: "TRAEFIK_DOMAIN"
+      description: "Override for the base domain that is defined in Traefik."
+      label: "Traefik Domain"
+      type: "string"
+
+    - variable: "TRAEFIK_HOST"
+      description: |
+        Additional domain name that should be advertised through Traefik.
+        Comma separate to include more than one.
+      label: "Traefik Host"
+      type: "string"
