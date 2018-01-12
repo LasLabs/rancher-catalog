@@ -1,0 +1,231 @@
+---
+version: '2'
+
+volumes:
+  runbot-web-data:
+    driver: ${VOLUME_DRIVER}
+  runbot-build-data:
+    driver: ${VOLUME_DRIVER}
+  runbot-ssh-data:
+    driver: ${VOLUME_DRIVER}
+  runbot-private-addons:
+    driver: ${VOLUME_DRIVER}
+  {{- if eq .Values.PSQL_SERVICE "" }}
+  runbot-db-data:
+    driver: ${VOLUME_DRIVER}
+  {{- end }}
+
+services:
+
+  runbot-install:
+    image: laslabs/runbot:9.0
+    environment:
+      PGPASSWORD: "${PSQL_PASSWORD}"
+      PGUSER: "${PSQL_USER}"
+      WITHOUT_DEMO: "all"
+    command: 'install-addons'
+    {{- if ne .Values.PSQL_SERVICE "" }}
+    external_links:
+    - "${PSQL_SERVICE}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    volumes:
+    - runbot-web-data:/var/lib/odoo
+    - runbot-build-data:/opt/odoo/custom/src/odoo-extra/runbot/static
+    - runbot-private-addons:/opt/odoo/custom/src/private
+    tty: true
+    labels:
+      io.rancher.container.pull_image: 'always'
+      io.rancher.container.start_once: 'true'
+    scale: 1
+    start_on_create: true
+
+  runbot-web:
+    image: laslabs/runbot:9.0
+    environment:
+      ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
+      PGPASSWORD: "${PSQL_PASSWORD}"
+      PGUSER: "${PSQL_USER}"
+      PROXY_MODE: "true"
+      WAIT_NOHOST: runbot-install
+    volumes:
+    - runbot-web-data:/var/lib/odoo
+    - runbot-build-data:/opt/odoo/custom/src/odoo-extra/runbot/static
+    - runbot-private-addons:/opt/odoo/custom/src/private
+    tty: true
+    {{- if ne .Values.PSQL_SERVICE "" }}
+    external_links:
+    - "${PSQL_SERVICE}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    command:
+    - "/usr/local/bin/odoo"
+    - "--max-cron-threads=0"
+    - "--workers=${ODOO_WORKERS}"
+    labels:
+      {{- if ne .Values.TRAEFIK_DOMAIN "" }}
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      {{- end }}
+      {{- if ne .Values.TRAEFIK_HOST "" }}
+      traefik.frontend.rule: 'Host: ${TRAEFIK_HOST}'
+      {{- end }}
+      traefik.enable: 'true'
+      traefik.port: '8069'
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+      traefik.frontend.passHostHeader: 'true'
+      traefik.frontend.priority: 10
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8069
+      unhealthy_threshold: 10
+      initializing_timeout: 60000
+      interval: 5000
+      strategy: recreate
+      request_line: GET "/" "HTTP/1.0"
+
+  runbot-cron:
+    privileged: true
+    image: laslabs/runbot:9.0
+    environment:
+      ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
+      PGPASSWORD: "${PSQL_PASSWORD}"
+      PGUSER: "${PSQL_USER}"
+      DOCKER_REGISTRY_DOCKERHUB_USERNAME: "${DOCKERHUB_USERNAME}"
+      DOCKER_REGISTRY_DOCKERHUB_PASSWORD: "${DOCKERHUB_PASSWORD}"
+      WAIT_NOHOST: runbot-install
+    volumes:
+    - runbot-web-data:/var/lib/odoo
+    - runbot-build-data:/opt/odoo/custom/src/odoo-extra/runbot/static
+    - runbot-ssh-data:/home/odoo/.ssh
+    - runbot-private-addons:/opt/odoo/custom/src/private
+    - /var/run/docker.sock:/var/run/docker.sock
+    tty: true
+    {{- if ne .Values.PSQL_SERVICE "" }}
+    external_links:
+    - "${PSQL_SERVICE}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    command:
+    - "/usr/local/bin/odoo"
+    - "--max-cron-threads=${ODOO_MAX_CRON_THREADS}"
+    - "--workers=0"
+    - "--limit-time-real=${ODOO_CRON_LIMIT_TIME_REAL}"
+    - "--limit-time-cpu=${ODOO_CRON_LIMIT_TIME_CPU}"
+    labels:
+      io.rancher.scheduler.affinity:host_label: "${HOST_LABEL_WORKER}"
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8069
+      unhealthy_threshold: 250
+      initializing_timeout: 60000
+      interval: 10000
+      strategy: recreate
+      request_line: GET "/" "HTTP/1.0"
+
+  runbot-longpolling:
+    image: laslabs/runbot:9.0
+    environment:
+      ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
+      PGPASSWORD: "${PSQL_PASSWORD}"
+      PGUSER: "${PSQL_USER}"
+      PROXY_MODE: "true"
+      WAIT_NOHOST: runbot-install
+    volumes:
+    - runbot-web-data:/var/lib/odoo
+    - runbot-build-data:/opt/odoo/custom/src/odoo-extra/runbot/static
+    - runbot-private-addons:/opt/odoo/custom/src/private
+    tty: true
+    {{- if ne .Values.PSQL_SERVICE "" }}
+    external_links:
+    - "${PSQL_SERVICE}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    command:
+    - "/usr/local/bin/odoo"
+    - "--max-cron-threads=0"
+    - "--workers=0"
+    labels:
+      {{- if ne .Values.TRAEFIK_HOST "" }}
+      traefik.frontend.rule: 'Host: ${TRAEFIK_HOST}; PathPrefix: /longpolling/;'
+      {{- else }}
+      traefik.frontend.rule: 'PathPrefix: /longpolling/;'
+      {{- end }}
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      traefik.enable: 'true'
+      traefik.port: '8069'
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+      traefik.frontend.passHostHeader: 'true'
+      traefik.frontend.priority: 10
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8069
+      unhealthy_threshold: 10
+      initializing_timeout: 60000
+      interval: 5000
+      strategy: recreate
+      request_line: GET "/" "HTTP/1.0"
+
+  traefik:
+    image: laslabs/runbot-traefik:latest
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    command:
+    - --web
+    labels:
+      traefik.enable: 'true'
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      traefik.frontend.rule: 'HostRegexp: {subdomain:[a-zA-Z0-9]+-[a-zA-Z0-9]+-[a-zA-Z0-9]+}.${TRAEFIK_DOMAIN};'
+      traefik.port: '80'
+      io.rancher.container.pull_image: always
+      traefik.frontend.passHostHeader: 'true'
+      traefik.frontend.priority: 1
+    scale: 1
+    start_on_create: true
+
+  {{- if eq .Values.PSQL_SERVICE "" }}
+  postgresql:
+    image: postgres:9.6-alpine
+    hostname: db
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: "${PSQL_PASSWORD}"
+      POSTGRES_USER: "${PSQL_USER}"
+    volumes:
+    - runbot-db-data:/var/lib/postgresql/data/
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 5432
+      unhealthy_threshold: 20
+      initializing_timeout: 60000
+      interval: 5000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  {{- end }}
