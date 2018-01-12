@@ -1,0 +1,110 @@
+version: "2"
+
+catalog:
+  name: Odoo Runbot
+  version: "v9.0.0.1.2"
+  description: |
+    Runbot is a Continuous Integration server for Odoo.
+    Meant to be proxied by Traefik.
+  uuid: laslabs-runbot-1
+  minimum_rancher_version: v1.0.0
+  questions:
+
+    - variable: "VOLUME_DRIVER"
+      description: "The volume driver to use for persistent storage."
+      label: "Volume Driver"
+      required: true
+      type: "enum"
+      default: "local"
+      options:
+        - local
+        - rancher-ebs
+        - rancher-efs
+        - rancher-nfs
+
+    - variable: "PSQL_SERVICE"
+      description: |
+        Existing PostgreSQL database service to use.
+        Leaving this empty will create a Postgres service in the stack.
+      label: "PostgreSQL Service"
+      type: "service"
+
+    - variable: "PSQL_USER"
+      description: "Username to use for the PostgreSQL server."
+      label: "PostgreSQL User"
+      default: "odoo"
+      type: "string"
+      required: true
+
+    - variable: "PSQL_PASSWORD"
+      description: "Password to use for the PostgreSQL server."
+      label: "PostgreSQL Password"
+      type: "password"
+      required: true
+
+    - variable: "ODOO_ADMIN_PASSWORD"
+      description: "Password to Odoo database management interface."
+      label: "Odoo Admin Password"
+      type: "password"
+      required: true
+
+    - variable: "DOCKERHUB_USERNAME"
+      description: "Username to use when logging into DockerHub."
+      label: "DockerHub Username"
+      type: "string"
+
+    - variable: "DOCKERHUB_PASSWORD"
+      description: "Password to use when logging into DockerHub."
+      label: "DockerHub Password"
+      type: "password"
+
+    - variable: "ODOO_CRON_LIMIT_TIME_REAL"
+      description: "Real time limit for the Runbot workers."
+      label: "Odoo Worker Time Limit (Real)"
+      type: "int"
+      required: true
+      default: 6000
+
+    - variable: "ODOO_CRON_LIMIT_TIME_CPU"
+      description: "CPU time limit for the Runbot workers."
+      label: "Odoo Worker Time Limit (CPU)"
+      type: "int"
+      required: true
+      default: 600
+
+    - variable: "ODOO_WORKERS"
+      description: "Amount of workers allowed per web instance."
+      label: "Odoo Workers"
+      type: "int"
+      required: true
+      default: 4
+
+    - variable: "ODOO_MAX_CRON_THREADS"
+      description: "Maximum amount of threads allowed for crons (per cron instance)."
+      label: "Odoo Cron Threads"
+      type: "int"
+      required: true
+      default: 1
+
+    - variable: "HOST_LABEL_WORKER"
+      description: |
+        Host label and value that must be applied to any host that is allowed to have
+        a Runbot build worker.
+      label: "Worker Label"
+      type: "string"
+      required: true
+      default: "runbot_worker=true"
+
+    - variable: "TRAEFIK_DOMAIN"
+      description: "Base domain to define in Traefik."
+      label: "Traefik Domain"
+      type: "string"
+      required: true
+      default: rancher.internal
+
+    - variable: "TRAEFIK_HOST"
+      description: |
+        Additional domain name that should be advertised through Traefik.
+        Comma separate to include more than one.
+      label: "Traefik Host"
+      type: "string"
