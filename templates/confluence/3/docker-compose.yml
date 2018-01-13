@@ -6,8 +6,6 @@ volumes:
     driver: ${VOLUME_DRIVER}
   confluence-home-data:
     driver: ${VOLUME_DRIVER}
-  confluence-install-data:
-    driver: ${VOLUME_DRIVER}
   {{- if eq .Values.PSQL_SERVICE "" }}
   confluence-db-data:
     driver: ${VOLUME_DRIVER}

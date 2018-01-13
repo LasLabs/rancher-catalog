@@ -5,8 +5,6 @@ volumes:
     driver: ${VOLUME_DRIVER}
   jira-home-data:
     driver: ${VOLUME_DRIVER}
-  jira-install-data:
-    driver: ${VOLUME_DRIVER}
   {{- if eq .Values.PSQL_SERVICE "" }}
   jira-db-data:
     driver: ${VOLUME_DRIVER}
