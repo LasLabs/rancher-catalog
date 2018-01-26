@@ -2,7 +2,7 @@ name: JIRA
 description: |
   JIRA based on Alpine with a PostgreSQL database. This build is meant to be
   behind a Traefik proxy.
-version: v0.1.2
+version: v0.2.0
 category: Project Management
 maintainer: LasLabs Inc. <support@laslabs.com>
 license: Apache 2.0
