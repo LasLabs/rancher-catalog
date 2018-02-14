@@ -1,0 +1,122 @@
+version: "2"
+
+catalog:
+  name: Odoo Upgrader
+  version: "v0.1.0"
+  description: |
+    Upgrade Odoo major versions.
+  uuid: laslabs-odoo-upgrade-0
+  minimum_rancher_version: v1.0.0
+  questions:
+
+    - variable: "VOLUME_DRIVER"
+      description: "The volume driver to use for persistent storage."
+      label: "Volume Driver"
+      required: true
+      type: "enum"
+      default: "local"
+      options:
+        - local
+        - rancher-ebs
+        - rancher-efs
+        - rancher-nfs
+
+    - variable: "ODOO_VERSION"
+      label: "Target Version"
+      description: |
+        Version of Odoo to upgrade to. This should be the major version
+        immediately above the version installed in your database. For
+        example - to upgrade a v8 to v9, you would select `9.0`.
+      type: "enum"
+      required: true
+      options:
+        - "9.0"
+        - "10.0"
+        - "11.0"
+
+    - variable: "SCAFFOLD_IMAGE"
+      description: "Your scaffold image location."
+      label: "Image"
+      type: "string"
+      required: true
+
+    - variable: "SCAFFOLD_TAG"
+      description: "The tag for your new Odoo image."
+      label: "Tag"
+      type: "string"
+      required: true
+
+    - variable: "ODOO_URI_OLD"
+      description: |
+        URI of an Odoo instance to obtain a backup from.
+        Note that this instance must be capable of providing a backup via the web UI.
+      label: "Old Odoo URI"
+      type: "string"
+      required: true
+
+    - variable: "ADMIN_PASSWORD_OLD"
+      description: |
+        Database administration password for the old Odoo system.
+      label: "Old Admin Password"
+      type: "password"
+      required: true
+
+    - variable: "PSQL_DATABASE_OLD"
+      description: "Name of source database on the old PostgreSQL server."
+      label: "Source Database"
+      type: "string"
+      required: true
+
+    - variable: "PSQL_SERVICE_NEW"
+      description: |
+        Existing PostgreSQL database service to use for the upgraded database.
+        Leaving this empty will create a Postgres service in the stack.
+      label: "PostgreSQL New"
+      type: "service"
+
+    - variable: "PSQL_USER_NEW"
+      description: |
+        Username to use for the new PostgreSQL server.
+      label: "New PostgreSQL User"
+      type: "string"
+
+    - variable: "PSQL_PASSWORD_NEW"
+      description: |
+        Password to use for the new PostgreSQL server.
+      label: "New PostgreSQL Password"
+      type: "password"
+
+    - variable: "PSQL_DATABASE_NEW"
+      description: "Name of target database on the new PostgreSQL server."
+      label: "Target Database"
+      type: "string"
+      required: true
+
+    - variable: "ODOO_ADMIN_PASSWORD"
+      description: "Password to Odoo database management interface."
+      label: "Odoo Admin Password"
+      type: "password"
+      required: true
+
+    - variable: "HOST_LABEL"
+      description: |
+        Host label and value that must be applied to a host in order to allow
+        updater services on them.
+      label: "Host Label"
+      type: "string"
+      required: true
+      default: "odoo_updater=true"
+
+    - variable: "TRAEFIK_DOMAIN"
+      description: "Base domain to define in Traefik."
+      label: "Traefik Domain"
+      type: "string"
+      required: true
+      default: rancher.internal
+
+    - variable: "TRAEFIK_HOST"
+      description: |
+        Additional domain name that should be advertised through Traefik.
+        Comma separate to include more than one.
+      label: "Traefik Host"
+      type: "string"

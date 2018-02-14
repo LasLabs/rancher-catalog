@@ -1,0 +1,135 @@
+---
+version: '2'
+
+volumes:
+  odoo-web-data:
+    driver: ${VOLUME_DRIVER}
+  odoo-private-addons:
+    driver: ${VOLUME_DRIVER}
+  {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+  odoo-db-data:
+    driver: ${VOLUME_DRIVER}
+  {{- end }}
+
+services:
+
+  odoo-upgrader:
+    image: "laslabs/odoo-upgrade:${ODOO_VERSION}"
+    environment:
+      DB_SOURCE: "${PSQL_DATABASE_OLD}"
+      DB_TARGET: "${PSQL_DATABASE_NEW}"
+      PGDATABASE: "${PSQL_DATABASE_NEW}"
+      PGUSER: "${PSQL_USER_NEW}"
+      PGPASSWORD: "${PSQL_PASSWORD_NEW}"
+      ODOO_URI_OLD: "${ODOO_URI_OLD}"
+      ADMIN_PASSWORD_OLD: "${ADMIN_PASSWORD_OLD}"
+    {{- if ne .Values.PSQL_SERVICE_NEW "" }}
+    external_links:
+    - "${PSQL_SERVICE_NEW}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    volumes:
+    - odoo-web-data:/var/lib/odoo
+    - odoo-private-addons:/opt/odoo/custom/src/private
+    labels:
+      io.rancher.container.pull_image: 'always'
+      io.rancher.container.start_once: 'true'
+    scale: 1
+    start_on_create: true
+
+#  odoo-upgrader-custom:
+#    image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
+#    command: |
+#      odoo --workers 0 \
+#           --limit-time-cpu 0 \
+#           --limit-time-real 0 \
+#           --stop-after-init \
+#           --update all
+#    environment:
+#      PGDATABASE: "${PSQL_DATABASE_NEW}"
+#      PGUSER: "${PSQL_USER_NEW}"
+#      PGPASSWORD: "${PSQL_PASSWORD_NEW}"
+#      WAIT_NOHOST: "odoo-upgrader-core"
+#    {{- if ne .Values.PSQL_SERVICE_NEW "" }}
+#    external_links:
+#    - "${PSQL_SERVICE_NEW}:db"
+#    {{- end }}
+#    {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+#    links:
+#    - postgresql:db
+#    {{- end }}
+#    volumes:
+#    - odoo-web-data:/var/lib/odoo
+#    - odoo-private-addons:/opt/odoo/custom/src/private
+#    labels:
+#      io.rancher.container.pull_image: 'always'
+#      io.rancher.container.start_once: 'true'
+#    scale: 1
+#    start_on_create: true
+
+  odoo:
+    image: "${SCAFFOLD_IMAGE}:${SCAFFOLD_TAG}"
+    environment:
+      PGDATABASE: "${PSQL_DATABASE_NEW}"
+      PGUSER: "${PSQL_USER_NEW}"
+      PGPASSWORD: "${PSQL_PASSWORD_NEW}"
+      ADMIN_PASSWORD: "${ODOO_ADMIN_PASSWORD}"
+      WAIT_NOHOST: "odoo-upgrader"
+    {{- if ne .Values.PSQL_SERVICE_NEW "" }}
+    external_links:
+    - "${PSQL_SERVICE_NEW}:db"
+    {{- end }}
+    {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+    links:
+    - postgresql:db
+    {{- end }}
+    volumes:
+    - odoo-web-data:/var/lib/odoo
+    - odoo-private-addons:/opt/odoo/custom/src/private
+    labels:
+      {{- if ne .Values.TRAEFIK_DOMAIN "" }}
+      traefik.domain: "${TRAEFIK_DOMAIN}"
+      {{- end }}
+      {{- if ne .Values.TRAEFIK_HOST "" }}
+      traefik.frontend.rule: 'Host: ${TRAEFIK_HOST}'
+      {{- end }}
+      traefik.enable: 'true'
+      traefik.port: '8069'
+      traefik.frontend.passHostHeader: 'true'
+      io.rancher.container.pull_image: 'always'
+    scale: 1
+    start_on_create: false
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8069
+      unhealthy_threshold: 10
+      initializing_timeout: 99999999999999
+      interval: 5000
+      strategy: recreate
+      request_line: GET "/" "HTTP/1.0"
+
+  {{- if eq .Values.PSQL_SERVICE_NEW "" }}
+  postgresql:
+    image: postgres:9.6-alpine
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: "${PSQL_PASSWORD_NEW}"
+      POSTGRES_USER: "${PSQL_USER_NEW}"
+    volumes:
+    - odoo-db-data:/var/lib/postgresql/data/
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 5432
+      unhealthy_threshold: 20
+      initializing_timeout: 60000
+      interval: 5000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  {{- end }}
